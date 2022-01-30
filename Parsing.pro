@@ -5,13 +5,19 @@ TEMPLATE = app
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    metadatawidget.cpp \
+    renamewidget.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    metadatawidget.h \
+    renamewidget.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    metadatawidget.ui \
+    renamewidget.ui
 
 RESOURCES += \
     img.qrc
