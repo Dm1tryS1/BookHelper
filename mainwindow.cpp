@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(metaData, &MetaDataWidget::menuWindow, this, &MainWindow::show);
 
     rename = new RenameWidget();
-    connect(rename, &RenameWidget::menuWindow, this, &MainWindow::show);
+    connect(rename, SIGNAL(menuWindow()), this, SLOT(show()));
 }
 
 MainWindow::~MainWindow()

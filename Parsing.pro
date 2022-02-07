@@ -1,4 +1,4 @@
-QT     += core gui multimedia axcontainer
+QT     += core gui multimedia axcontainer gui-private
 
 TARGET = Parsing
 TEMPLATE = app
@@ -12,7 +12,7 @@ SOURCES += \
 HEADERS += \
     mainwindow.h \
     metadatawidget.h \
-    renamewidget.h
+    renamewidget.h \
 
 FORMS += \
     mainwindow.ui \

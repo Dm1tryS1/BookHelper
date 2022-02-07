@@ -63,7 +63,6 @@ void MetaDataWidget::makeList(QString path)
     dir.setPath(path);
     QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
 
-
     if (listDir.empty())
     {
         QStringList files = dir.entryList(filters, QDir::Files);
