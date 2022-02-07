@@ -10,9 +10,9 @@ RenameWidget::RenameWidget(QWidget *parent) :
     ui->setupUi(this);
     worker.moveToThread(&thread);
 
+
     connect(&thread, &QThread::started, &worker, &Worker::doWork);
     connect(&worker, &Worker::workProgress, this, &RenameWidget::setText);
-
 }
 
 RenameWidget::~RenameWidget()
@@ -65,8 +65,8 @@ void RenameWidget::on_pb_Rename_clicked()
 {
     if (!FilePath.isEmpty() && !DirectoryPath.isEmpty() && !ResultPath.isEmpty())
     {
-        ui->lableLoad->setText("");
-        worker.setter(DirectoryPath,FilePath,ResultPath);
+        worker.setter(DirectoryPath,FilePath,ResultPath, ui->cb_Report->isChecked());
+        thread.terminate();
         thread.start();
         flag1 = false;
         flag2 = false;
@@ -78,11 +78,12 @@ void RenameWidget::on_pb_Rename_clicked()
     }
 }
 
-void Worker::setter(QString DPath, QString FPath, QString RPath)
+void Worker::setter(QString DPath, QString FPath, QString RPath, bool rep)
 {
     DirectoryPath = DPath;
     FilePath = FPath;
     ResultPath = RPath;
+    report = rep;
 }
 
 void Worker::doWork()
@@ -111,26 +112,52 @@ void Worker::doWork()
     QDir dir;
     dir.setPath(DirectoryPath);
     QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
+    QString article;
+    QStringList mistakes;
 
     for (int i = 0; i<listDir.size();i++)
     {
-        QString tempresult = ResultPath + "/" + "books" + "/" + getArticle(listDir.at(i), lastRow, sheet);
-        QString temppath = DirectoryPath + "/" + listDir.at(i) + "/" + listDir.at(i);
-        dir.mkpath(tempresult);
+        article = getArticle(listDir.at(i), lastRow, sheet);
+        if (!article.isEmpty())
+        {
+            QString tempresult = ResultPath + "/" + "books" + "/" + article;
+            QString temppath = DirectoryPath + "/" + listDir.at(i) + "/" + listDir.at(i);
+            dir.mkpath(tempresult);
 
-        dir.setPath(temppath);
-        foreach (QString f, dir.entryList(QDir::Files))
-            QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
+            dir.setPath(temppath);
+            foreach (QString f, dir.entryList(QDir::Files))
+                QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
 
-        tempresult = ResultPath + "/" + "image";
-        temppath = DirectoryPath + "/" + listDir.at(i);
-        dir.mkpath(tempresult);
-        dir.setPath(temppath);
-        foreach (QString f, dir.entryList(QDir::Files))
-            QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
-        QThread::msleep(100);
-        emit workProgress("Обработано каталогов: " + QString::number(i) + "/" + QString::number(listDir.size()));
+            tempresult = ResultPath + "/" + "image";
+            temppath = DirectoryPath + "/" + listDir.at(i);
+            dir.mkpath(tempresult);
+            dir.setPath(temppath);
+            foreach (QString f, dir.entryList(QDir::Files))
+                QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
+            QThread::msleep(100);
+            emit workProgress("Обработано каталогов: " + QString::number(i) + "/" + QString::number(listDir.size()));
+        }
+        else
+            mistakes << DirectoryPath + "/" + listDir.at(i);
     }
+    if (report)
+    {
+        QFile file(ResultPath + "/" + "report.txt");
+        if (file.open(QIODevice::WriteOnly))
+        {
+            QTextStream out(&file);
+            if (mistakes.size())
+            {
+                out << "Broken ISBN:" << endl;
+                for (int i = 0;i < mistakes.size(); i++)
+                    out << mistakes.at(i) << endl;
+                file.close();
+            }
+            else
+                out << "No mistakes!" << endl;
+        }
+    }
+
     QThread::msleep(100);
     emit workProgress("Архивация...");
     this->doArchive(ResultPath + "/" + "books" + "/", ResultPath + "/" "books.zip");
@@ -155,12 +182,13 @@ QString Worker::getArticle(QString isbn, int lastRow, QAxObject *sheet)
         if (cell->property("Value").toString() == isbn)
         {
             result = sheet->querySubObject( "Cells(int,int)", i+1,2)->property("Value").toString();
-            break;
+            delete cell;
+            return result;
         }
 
     }
     delete cell;
-    return result;
+    return "";
 }
 
 void Worker::doArchive(QString path, QString zippath)

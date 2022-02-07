@@ -27,11 +27,12 @@ private:
     QString FilePath ="";
     QString DirectoryPath ="";
     QString ResultPath = "";
+    bool report = false;
 
     QString getArticle(QString isbn, int lastRow, QAxObject *sheet);
     void doArchive(QString path, QString zippath);
 public:
-    void setter(QString DPath, QString FPath, QString RPath);
+    void setter(QString DPath, QString FPath, QString RPath, bool rep);
 };
 
 
