@@ -1,6 +1,6 @@
 QT     += core gui multimedia axcontainer gui-private
 
-TARGET = Parsing
+TARGET = BookHelp
 TEMPLATE = app
 
 SOURCES += \
