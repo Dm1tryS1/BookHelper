@@ -171,37 +171,37 @@ QString Worker::getArticle(QString isbn, int lastRow, QAxObject *sheet)
     std::unique_ptr<QAxObject>myCell;
     for (int i = 0; i<lastRow; i++)
     {
-            myCell.reset(sheet->querySubObject( "Cells(int,int)", i+1,1));
-            if (myCell->property("Value").toString() == isbn)
-                return sheet->querySubObject( "Cells(int,int)", i+1,2)->property("Value").toString();
+        myCell.reset(sheet->querySubObject( "Cells(int,int)", i+1,1));
+        if (myCell->property("Value").toString() == isbn)
+            return sheet->querySubObject( "Cells(int,int)", i+1,2)->property("Value").toString();
     }
     return "";
 }
 
 void Worker::doArchive(QString path, QString zippath)
 {
+    QZipWriter zip(zippath);
+
+    zip.setCompressionPolicy(QZipWriter::AutoCompress);
+
+    QDirIterator it(path, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it.hasNext())
     {
-           QZipWriter zip(zippath);
-
-           zip.setCompressionPolicy(QZipWriter::AutoCompress);
-
-           QDirIterator it(path, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot,
-                           QDirIterator::Subdirectories);
-           while (it.hasNext()) {
-               QString file_path = it.next();
-               if (it.fileInfo().isDir()) {
-                   zip.setCreationPermissions(QFile::permissions(file_path));
-                   zip.addDirectory(file_path.remove(path));
-               } else if (it.fileInfo().isFile()) {
-                   QFile file(file_path);
-                   if (!file.open(QIODevice::ReadOnly))
-                       continue;
-
-                   zip.setCreationPermissions(QFile::permissions(file_path));
-                   QByteArray ba = file.readAll();
-                   zip.addFile(file_path.remove(path), ba);
-               }
-           }
-           zip.close();
-       }
+        QString file_path = it.next();
+        if (it.fileInfo().isDir())
+        {
+            zip.setCreationPermissions(QFile::permissions(file_path));
+            zip.addDirectory(file_path.remove(path));
+        }
+        else if (it.fileInfo().isFile())
+        {
+            QFile file(file_path);
+            if (!file.open(QIODevice::ReadOnly))
+                continue;
+            zip.setCreationPermissions(QFile::permissions(file_path));
+            QByteArray ba = file.readAll();
+            zip.addFile(file_path.remove(path), ba);
+        }
+    }
+    zip.close();
 }
