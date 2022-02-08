@@ -2,14 +2,23 @@
 #include "ui_renamewidget.h"
 #include <private/qzipwriter_p.h>
 
+QString RenameWidget::filePath;
+QString RenameWidget::directoryPath;
+QString RenameWidget::resultPath;
+bool    RenameWidget::report;
 
 RenameWidget::RenameWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::RenameWidget)
 {
     ui->setupUi(this);
-    worker.moveToThread(&thread);
 
+    filePath = "C:/Users/dvm10/Desktop/";
+    directoryPath = "C:/Users/dvm10/Desktop/";
+    resultPath = "C:/Users/dvm10/Desktop/";
+    report = true;
+
+    worker.moveToThread(&thread);
 
     connect(&thread, &QThread::started, &worker, &Worker::doWork);
     connect(&worker, &Worker::workProgress, this, &RenameWidget::setText);
@@ -28,32 +37,23 @@ void RenameWidget::on_pb_Close_clicked()
 
 void RenameWidget::on_pb_File_clicked()
 {
-    FilePath = QFileDialog::getOpenFileName(this, "Выбрать файл для экспорта", FilePath, "(*.xlsx)");
-    ui->lineEdit_File->setText(FilePath);
-    if (!ui->lineEdit_File->text().isEmpty())
-        flag1 = true;
-    if (flag1 && flag2 && flag3)
-        ui->pb_Rename->setEnabled(true);
+    filePath = QFileDialog::getOpenFileName(this, "Выбрать файл для экспорта", filePath, "(*.xlsx)");
+    ui->lineEdit_File->setText(filePath);
+    setStatusButton();
 }
 
 void RenameWidget::on_pb_Directory_clicked()
 {
-    DirectoryPath = QFileDialog::getExistingDirectory(this, "Выбрать файл", DirectoryPath, QFileDialog::ShowDirsOnly);
-    ui->lineEdit_Directory->setText(DirectoryPath);
-    if (!ui->lineEdit_Directory->text().isEmpty())
-        flag2 = true;
-    if (flag1 && flag2 && flag3)
-        ui->pb_Rename->setEnabled(true);
+    directoryPath = QFileDialog::getExistingDirectory(this, "Выбрать файл", directoryPath, QFileDialog::ShowDirsOnly);
+    ui->lineEdit_Directory->setText(directoryPath);
+    setStatusButton();
 }
 
 void RenameWidget::on_pb_Result_clicked()
 {
-    ResultPath = QFileDialog::getExistingDirectory(this, "Выбрать файл", ResultPath, QFileDialog::ShowDirsOnly);
-    ui->lineEdit_Result->setText(ResultPath);
-    if (!ui->lineEdit_Result->text().isEmpty())
-        flag3 = true;
-    if (flag1 && flag2 && flag3)
-        ui->pb_Rename->setEnabled(true);
+    resultPath = QFileDialog::getExistingDirectory(this, "Выбрать файл", resultPath, QFileDialog::ShowDirsOnly);
+    ui->lineEdit_Result->setText(resultPath);
+    setStatusButton();
 }
 
 void RenameWidget::setText(QString message)
@@ -63,14 +63,11 @@ void RenameWidget::setText(QString message)
 
 void RenameWidget::on_pb_Rename_clicked()
 {
-    if (!FilePath.isEmpty() && !DirectoryPath.isEmpty() && !ResultPath.isEmpty())
+    if (!filePath.isEmpty() && !directoryPath.isEmpty() && !resultPath.isEmpty())
     {
-        worker.setter(DirectoryPath,FilePath,ResultPath, ui->cb_Report->isChecked());
+        report = ui->cb_Report->isChecked();
         thread.terminate();
         thread.start();
-        flag1 = false;
-        flag2 = false;
-        flag3 = false;
         ui->pb_Rename->setEnabled(false);
         ui->lineEdit_Directory->setText("");
         ui->lineEdit_File->setText("");
@@ -78,12 +75,10 @@ void RenameWidget::on_pb_Rename_clicked()
     }
 }
 
-void Worker::setter(QString DPath, QString FPath, QString RPath, bool rep)
+void RenameWidget::setStatusButton()
 {
-    DirectoryPath = DPath;
-    FilePath = FPath;
-    ResultPath = RPath;
-    report = rep;
+    if (!ui->lineEdit_Result->text().isEmpty() && !ui->lineEdit_Directory->text().isEmpty() && !ui->lineEdit_File->text().isEmpty())
+         ui->pb_Rename->setEnabled(true);
 }
 
 void Worker::doWork()
@@ -93,7 +88,7 @@ void Worker::doWork()
     excel = new QAxObject( "Excel.Application", this);
     excel->dynamicCall("SetVisible(bool)","false");
     QAxObject *workbooks = excel->querySubObject( "Workbooks" );
-    QAxObject *workbook = workbooks->querySubObject( "Open(const QString&)", FilePath);
+    QAxObject *workbook = workbooks->querySubObject( "Open(const QString&)", RenameWidget::getFilePath());
     QAxObject *sheets = workbook->querySubObject( "Worksheets" );
     QAxObject *sheet = sheets->querySubObject("Item( int )",1);
 
@@ -110,7 +105,7 @@ void Worker::doWork()
     }
 
     QDir dir;
-    dir.setPath(DirectoryPath);
+    dir.setPath(RenameWidget::getDirectoryPath());
     QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
     QString article;
     QStringList mistakes;
@@ -120,16 +115,16 @@ void Worker::doWork()
         article = getArticle(listDir.at(i), lastRow, sheet);
         if (!article.isEmpty())
         {
-            QString tempresult = ResultPath + "/" + "books" + "/" + article;
-            QString temppath = DirectoryPath + "/" + listDir.at(i) + "/" + listDir.at(i);
+            QString tempresult = RenameWidget::getResultPath() + "/" + "books" + "/" + article;
+            QString temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i) + "/" + listDir.at(i);
             dir.mkpath(tempresult);
 
             dir.setPath(temppath);
             foreach (QString f, dir.entryList(QDir::Files))
                 QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
 
-            tempresult = ResultPath + "/" + "image";
-            temppath = DirectoryPath + "/" + listDir.at(i);
+            tempresult = RenameWidget::getResultPath() + "/" + "image";
+            temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i);
             dir.mkpath(tempresult);
             dir.setPath(temppath);
             foreach (QString f, dir.entryList(QDir::Files))
@@ -138,11 +133,11 @@ void Worker::doWork()
             emit workProgress("Обработано каталогов: " + QString::number(i) + "/" + QString::number(listDir.size()));
         }
         else
-            mistakes << DirectoryPath + "/" + listDir.at(i);
+            mistakes << RenameWidget::getDirectoryPath() + "/" + listDir.at(i);
     }
-    if (report)
+    if (RenameWidget::getReport())
     {
-        QFile file(ResultPath + "/" + "report.txt");
+        QFile file(RenameWidget::getResultPath() + "/" + "report.txt");
         if (file.open(QIODevice::WriteOnly))
         {
             QTextStream out(&file);
@@ -160,8 +155,8 @@ void Worker::doWork()
 
     QThread::msleep(100);
     emit workProgress("Архивация...");
-    this->doArchive(ResultPath + "/" + "books" + "/", ResultPath + "/" "books.zip");
-    this->doArchive(ResultPath + "/" + "image" + "/", ResultPath + "/" "image.zip");
+    this->doArchive(RenameWidget::getResultPath() + "/" + "books" + "/", RenameWidget::getResultPath() + "/" "books.zip");
+    this->doArchive(RenameWidget::getResultPath() + "/" + "image" + "/", RenameWidget::getResultPath() + "/" "image.zip");
 
     emit workProgress("Готово");
 

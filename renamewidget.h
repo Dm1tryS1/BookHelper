@@ -14,6 +14,9 @@ class RenameWidget;
 class Worker : public QObject
 {
     Q_OBJECT
+    QString getArticle(QString isbn, int lastRow, QAxObject *sheet);
+    void doArchive(QString path, QString zippath);
+
 public:
     Worker(QObject *_parent = 0):QObject(_parent){};
 
@@ -22,30 +25,30 @@ signals:
 
 public slots:
     void doWork();
-
-private:
-    QString FilePath ="";
-    QString DirectoryPath ="";
-    QString ResultPath = "";
-    bool report = false;
-
-    QString getArticle(QString isbn, int lastRow, QAxObject *sheet);
-    void doArchive(QString path, QString zippath);
-public:
-    void setter(QString DPath, QString FPath, QString RPath, bool rep);
 };
 
 
 class RenameWidget : public QWidget
 {
     Q_OBJECT
-    QString FilePath ="C:/Users/dvm10/Desktop/";
-    QString DirectoryPath ="C:/Users/dvm10/Desktop/";
-    QString ResultPath = "C:/Users/dvm10/Desktop/";
+    static QString filePath;
+    static QString directoryPath;
+    static QString resultPath;
+    static bool    report;
+
+    Ui::RenameWidget *ui;
+    Worker worker;
+    QThread thread;
+    void setStatusButton();
 
 public:
     explicit RenameWidget(QWidget *parent = nullptr);
     ~RenameWidget();
+    static QString getFilePath() { return filePath; }
+    static QString getDirectoryPath() { return directoryPath; }
+    static QString getResultPath() { return resultPath; }
+    static bool    getReport() { return report; }
+
 
 signals:
     void menuWindow();
@@ -58,12 +61,5 @@ private slots:
     void on_pb_Result_clicked();
     void setText(QString message);
 
-public:
-    Ui::RenameWidget *ui;
-    Worker worker;
-    QThread thread;
-    bool flag1 = false;
-    bool flag2 = false;
-    bool flag3 = false;
 };
 #endif // RENAMEWIDGET_H
