@@ -274,44 +274,46 @@ void MetaDataWidget::on_pb_Export_clicked()
             this->setEnabled(false);
 
             int lastRow = 0;
-            bool lastRowFound = false;
             QString currBook;
             bool flag;
 
-            QAxObject *excel = new QAxObject( "Excel.Application", this);
+            std::unique_ptr<QAxObject>excel(new QAxObject( "Excel.Application", this));
             excel->dynamicCall("SetVisible(bool)","false");
             excel-> setProperty ("DisplayAlerts", false);
-            QAxObject *workbooks = excel->querySubObject( "Workbooks" );
-            QAxObject *workbook = workbooks->querySubObject( "Open(const QString&)", fileName);
-            QAxObject *sheets = workbook->querySubObject( "Worksheets" );
-            QAxObject *sheet = sheets->querySubObject("Item( int )",1);
+            std::unique_ptr<QAxObject> workbooks (excel->querySubObject( "Workbooks"));
+            std::unique_ptr<QAxObject> workbook  (workbooks->querySubObject( "Open(const QString&)", fileName));
+            std::unique_ptr<QAxObject> sheets    (workbook->querySubObject( "Worksheets" ));
+            std::unique_ptr<QAxObject> sheet     (sheets->querySubObject("Item( int )",1));
 
-            while(!lastRowFound)
             {
-                lastRow++;
-                QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow,1);
-                if (cell->property("Value").toString() == "")
-                    lastRowFound = true;
-                delete cell;
+                std::unique_ptr<QAxObject> cell;
+                while(true)
+                {
+                    lastRow++;
+                    cell.reset(sheet->querySubObject( "Cells(int,int)", lastRow,1));
+                    if (cell->property("Value").toString() == "")
+                        break;
+                }
             }
 
             if (lastRow == 1)
             {
-                    setHeader(sheet);
+                    setHeader(sheet.get());
                     lastRow++;
             }
 
-            QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow-1,1);
+            std::unique_ptr<QAxObject> cell(sheet->querySubObject( "Cells(int,int)", lastRow-1,1));
             currBook = cell->property("Value()").toString();
-            flag = setColor(sheet, lastRow);
-            delete cell;
+            flag = setColor(sheet.get(), lastRow);
+            std::unique_ptr<QAxObject> interior;
 
             for (int i=0;i<ui->tableWidget->rowCount();i++)
             {
+
                 for (int j=0;j<ui->tableWidget->columnCount();j++)
                 {
-                    QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow+i,j+1);
-                    QAxObject *interior = cell->querySubObject("Interior");
+                    cell.reset(sheet->querySubObject( "Cells(int,int)", lastRow+i,j+1));
+                    interior.reset(cell->querySubObject("Interior"));
 
                     if (currBook == ui->tableWidget->item(i,12)->text())
                     {
@@ -334,8 +336,6 @@ void MetaDataWidget::on_pb_Export_clicked()
                     }
 
                     cell->dynamicCall( "SetValue(const QVariant&)", QVariant((ui->tableWidget->item(i,j)->text())));
-                    delete interior;
-                    delete cell;
                 }
 
                 ui->lableLoad->setText("Экспорт: " + QString::number(i+1) + "/" + QString::number(amount));
@@ -344,9 +344,6 @@ void MetaDataWidget::on_pb_Export_clicked()
             workbook->dynamicCall("Save()");
             workbooks->dynamicCall("Close()");
             excel->dynamicCall("Quit()");
-
-            delete excel;
-
             this->setEnabled(true);
             QMessageBox msgBox;
             msgBox.setText("Выгрузка прошла успешно!");

@@ -13,10 +13,10 @@ RenameWidget::RenameWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    filePath = "C:/Users/dvm10/Desktop/";
+    filePath      = "C:/Users/dvm10/Desktop/";
     directoryPath = "C:/Users/dvm10/Desktop/";
-    resultPath = "C:/Users/dvm10/Desktop/";
-    report = true;
+    resultPath    = "C:/Users/dvm10/Desktop/";
+    report        =  true;
 
     worker.moveToThread(&thread);
 
