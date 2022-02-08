@@ -83,106 +83,98 @@ void RenameWidget::setStatusButton()
 
 void Worker::doWork()
 {
-    emit workProgress("");
-    QAxObject* excel;
-    excel = new QAxObject( "Excel.Application", this);
-    excel->dynamicCall("SetVisible(bool)","false");
-    QAxObject *workbooks = excel->querySubObject( "Workbooks" );
-    QAxObject *workbook = workbooks->querySubObject( "Open(const QString&)", RenameWidget::getFilePath());
-    QAxObject *sheets = workbook->querySubObject( "Worksheets" );
-    QAxObject *sheet = sheets->querySubObject("Item( int )",1);
+        emit workProgress("");
 
-    int lastRow = 0;
-    bool lastRowFound = false;
+        std::unique_ptr<QAxObject> excel (new QAxObject( "Excel.Application", this));
+        excel->dynamicCall("SetVisible(bool)","false");
+        std::unique_ptr<QAxObject> workbooks (excel->querySubObject( "Workbooks"));
+        std::unique_ptr<QAxObject> workbook  (workbooks->querySubObject( "Open(const QString&)", RenameWidget::getFilePath()));
+        std::unique_ptr<QAxObject> sheets    (workbook->querySubObject( "Worksheets" ));
+        std::unique_ptr<QAxObject> sheet     (sheets->querySubObject("Item( int )",1));
 
-    while(!lastRowFound)
-    {
-        lastRow++;
-        QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow,1);
-        if (cell->property("Value").toString() == "")
-            lastRowFound = true;
-        delete cell;
-    }
 
-    QDir dir;
-    dir.setPath(RenameWidget::getDirectoryPath());
-    QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
-    QString article;
-    QStringList mistakes;
+        int lastRow = 0;
 
-    for (int i = 0; i<listDir.size();i++)
-    {
-        article = getArticle(listDir.at(i), lastRow, sheet);
-        if (!article.isEmpty())
+        while(true)
         {
-            QString tempresult = RenameWidget::getResultPath() + "/" + "books" + "/" + article;
-            QString temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i) + "/" + listDir.at(i);
-            dir.mkpath(tempresult);
-
-            dir.setPath(temppath);
-            foreach (QString f, dir.entryList(QDir::Files))
-                QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
-
-            tempresult = RenameWidget::getResultPath() + "/" + "image";
-            temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i);
-            dir.mkpath(tempresult);
-            dir.setPath(temppath);
-            foreach (QString f, dir.entryList(QDir::Files))
-                QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
-            QThread::msleep(100);
-            emit workProgress("Обработано каталогов: " + QString::number(i) + "/" + QString::number(listDir.size()));
-        }
-        else
-            mistakes << RenameWidget::getDirectoryPath() + "/" + listDir.at(i);
-    }
-    if (RenameWidget::getReport())
-    {
-        QFile file(RenameWidget::getResultPath() + "/" + "report.txt");
-        if (file.open(QIODevice::WriteOnly))
-        {
-            QTextStream out(&file);
-            if (mistakes.size())
+            lastRow++;
             {
-                out << "Broken ISBN:" << endl;
-                for (int i = 0;i < mistakes.size(); i++)
-                    out << mistakes.at(i) << endl;
-                file.close();
+                std::unique_ptr<QAxObject> cell (sheet->querySubObject( "Cells(int,int)", lastRow,1));
+                if (cell->property("Value").toString() == "")
+                    break;
+            }
+        }
+
+        QDir dir;
+        dir.setPath(RenameWidget::getDirectoryPath());
+        QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
+        QString article;
+        QStringList mistakes;
+
+        for (int i = 0; i<listDir.size();i++)
+        {
+            article = getArticle(listDir.at(i), lastRow, sheet.get());
+            if (!article.isEmpty())
+            {
+                QString tempresult = RenameWidget::getResultPath() + "/" + "books" + "/" + article;
+                QString temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i) + "/" + listDir.at(i);
+                dir.mkpath(tempresult);
+                dir.setPath(temppath);
+                foreach (QString f, dir.entryList(QDir::Files))
+                    QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
+
+                tempresult = RenameWidget::getResultPath() + "/" + "image";
+                temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i);
+                dir.mkpath(tempresult);
+                dir.setPath(temppath);
+                foreach (QString f, dir.entryList(QDir::Files))
+                    QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
+
+                QThread::msleep(100);
+                emit workProgress("Обработано каталогов: " + QString::number(i+1) + "/" + QString::number(listDir.size()));
             }
             else
-                out << "No mistakes!" << endl;
+                mistakes << RenameWidget::getDirectoryPath() + "/" + listDir.at(i);
         }
-    }
+        if (RenameWidget::getReport())
+        {
+            QFile file(RenameWidget::getResultPath() + "/" + "report.txt");
+            if (file.open(QIODevice::WriteOnly))
+            {
+                QTextStream out(&file);
+                if (mistakes.size())
+                {
+                    out << "Broken ISBN:" << endl;
+                    for (int i = 0;i < mistakes.size(); i++)
+                        out << mistakes.at(i) << endl;
+                    file.close();
+                }
+                else
+                    out << "No mistakes!" << endl;
+            }
+        }
 
-    QThread::msleep(100);
-    emit workProgress("Архивация...");
-    this->doArchive(RenameWidget::getResultPath() + "/" + "books" + "/", RenameWidget::getResultPath() + "/" "books.zip");
-    this->doArchive(RenameWidget::getResultPath() + "/" + "image" + "/", RenameWidget::getResultPath() + "/" "image.zip");
+        QThread::msleep(100);
+        emit workProgress("Архивация...");
+        this->doArchive(RenameWidget::getResultPath() + "/" + "books" + "/", RenameWidget::getResultPath() + "/" "books.zip");
+        this->doArchive(RenameWidget::getResultPath() + "/" + "image" + "/", RenameWidget::getResultPath() + "/" "image.zip");
 
-    emit workProgress("Готово");
+        emit workProgress("Готово");
 
-    workbook->dynamicCall("Save()");
-    workbooks->dynamicCall("Close()");
-    excel->dynamicCall("Quit()");
-    delete excel;
+        workbook->dynamicCall("Save()");
+        workbooks->dynamicCall("Close()");
+        excel->dynamicCall("Quit()");
 }
 
 QString Worker::getArticle(QString isbn, int lastRow, QAxObject *sheet)
 {
-    QString result;
-    QAxObject *cell;
-
+    std::unique_ptr<QAxObject>myCell;
     for (int i = 0; i<lastRow; i++)
     {
-        cell = sheet->querySubObject( "Cells(int,int)", i+1,1);
-        if (cell->property("Value").toString() == isbn)
-        {
-            result = sheet->querySubObject( "Cells(int,int)", i+1,2)->property("Value").toString();
-            delete cell;
-            return result;
-        }
-
+            myCell.reset(sheet->querySubObject( "Cells(int,int)", i+1,1));
+            if (myCell->property("Value").toString() == isbn)
+                return sheet->querySubObject( "Cells(int,int)", i+1,2)->property("Value").toString();
     }
-    delete cell;
     return "";
 }
 

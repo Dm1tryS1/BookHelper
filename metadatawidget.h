@@ -13,14 +13,21 @@ class MetaDataWidget;
 class MetaDataWidget : public QWidget
 {
     Q_OBJECT
-    QString InputPath =":/";
+    QString InputPath ="C:/Users/dvm10/Desktop/";
     QStringList listFile;
     QMediaPlayer *player;
+    int ind;
+    int amount;
+    Ui::MetaDataWidget *ui;
 
-    int ind = 0;
-    int amount = 0;
+    void makeList(QString path);
+    void newRow(QStringList list);
 
-    QAxObject* excel;
+    QString getDuration(QString duration);
+    void getSumDuration();
+
+    void setHeader(QAxObject *sheet);
+    bool setColor(QAxObject *sheet,int lastRow);
 
 public:
     explicit MetaDataWidget(QWidget *parent = nullptr);
@@ -33,18 +40,8 @@ private slots:
     void on_pb_Load_clicked();
     void on_pb_Export_clicked();
     void on_pb_Clear_clicked();
-
-    QString getDuration(QString duration);
-    void newRow(QStringList list);
-    void setHeader(QAxObject *sheet);
-    bool setColor(QAxObject *sheet,int lastRow);
-    void makeList(QString path);
-    void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
-    void getSumDuration();
-
     void on_pb_Close_clicked();
-private:
-    Ui::MetaDataWidget *ui;
+    void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
 };
 
 #endif // METADATAWIDGET_H

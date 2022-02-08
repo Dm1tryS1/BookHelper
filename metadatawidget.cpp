@@ -188,87 +188,82 @@ void MetaDataWidget::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 
 void MetaDataWidget::setHeader(QAxObject *sheet)
 {
-            QAxObject *cell = sheet->querySubObject( "Cells(int,int)", 1,1);
+            std::unique_ptr<QAxObject>cell(sheet->querySubObject( "Cells(int,int)", 1,1));
             cell->dynamicCall( "SetValue(const QVariant&)", "Путь к файлу");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,2);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,2));
             cell->dynamicCall( "SetValue(const QVariant&)", "Название");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,3);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,3));
             cell->dynamicCall( "SetValue(const QVariant&)", "Субтитры");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,4);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,4));
             cell->dynamicCall( "SetValue(const QVariant&)", "Комментарий");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,5);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,5));
             cell->dynamicCall( "SetValue(const QVariant&)", "Участвующие исполнители");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,6);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,6));
             cell->dynamicCall( "SetValue(const QVariant&)", "Исполнитель альбома");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,7);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,7));
             cell->dynamicCall( "SetValue(const QVariant&)", "Альбом");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,8);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,8));
             cell->dynamicCall( "SetValue(const QVariant&)", "Год");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,9);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,9));
             cell->dynamicCall( "SetValue(const QVariant&)", "№");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,10);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,10));
             cell->dynamicCall( "SetValue(const QVariant&)", "Жанр");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,11);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,11));
             cell->dynamicCall( "SetValue(const QVariant&)", "Продолжительность");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,12);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,12));
             cell->dynamicCall( "SetValue(const QVariant&)", "Общая продолжительность");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,13);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,13));
             cell->dynamicCall( "SetValue(const QVariant&)", "Композитор");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,14);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,14));
             cell->dynamicCall( "SetValue(const QVariant&)", "Дирижер");
 
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,15);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,15));
             cell->dynamicCall( "SetValue(const QVariant&)", "Настроение");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,16);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,16));
             cell->dynamicCall( "SetValue(const QVariant&)", "Скорость потока");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,17);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,17));
             cell->dynamicCall( "SetValue(const QVariant&)", "Кодек");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,18);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,18));
             cell->dynamicCall( "SetValue(const QVariant&)", "Количество каналов");
 
-            cell = sheet->querySubObject( "Cells(int,int)", 1,19);
+            cell.reset(sheet->querySubObject( "Cells(int,int)", 1,19));
             cell->dynamicCall( "SetValue(const QVariant&)", "Частота дискретизации");
-
-            delete cell;
 }
 
 bool MetaDataWidget::setColor(QAxObject *sheet, int lastRow)
 {
-    QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow-1,1);
-    QAxObject* interior = cell->querySubObject("Interior");;
+    std::unique_ptr<QAxObject>cell(sheet->querySubObject( "Cells(int,int)", lastRow-1,1));
+    std::unique_ptr<QAxObject>interior(cell->querySubObject("Interior"));
     QString color = interior->property("Color").toString();
 
     if (color == "16777215")
         return true;
     else
         return false;
-
-    delete cell;
-    delete interior;
 }
 
 void MetaDataWidget::on_pb_Export_clicked()
@@ -283,7 +278,7 @@ void MetaDataWidget::on_pb_Export_clicked()
             QString currBook;
             bool flag;
 
-            excel = new QAxObject( "Excel.Application", this);
+            QAxObject *excel = new QAxObject( "Excel.Application", this);
             excel->dynamicCall("SetVisible(bool)","false");
             excel-> setProperty ("DisplayAlerts", false);
             QAxObject *workbooks = excel->querySubObject( "Workbooks" );

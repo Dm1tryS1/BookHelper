@@ -5,11 +5,9 @@
 #include <QtWidgets>
 #include <QAxObject>
 
-
 namespace Ui {
 class RenameWidget;
 }
-
 
 class Worker : public QObject
 {
