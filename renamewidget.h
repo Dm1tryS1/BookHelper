@@ -13,7 +13,7 @@ class Worker : public QObject
 {
     Q_OBJECT
     QString getArticle(QString isbn, int lastRow, QAxObject *sheet);
-    void doArchive(QString path, QString zippath);
+    void doArchive(QString path, QString zippath, int size);
 
 public:
     Worker(QObject *_parent = 0):QObject(_parent){};

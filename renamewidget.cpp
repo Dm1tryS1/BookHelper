@@ -106,6 +106,7 @@ void Worker::doWork()
         }
 
         QDir dir;
+        QDir dirtemp;
         dir.setPath(RenameWidget::getDirectoryPath());
         QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
         QString article;
@@ -113,11 +114,15 @@ void Worker::doWork()
 
         for (int i = 0; i<listDir.size();i++)
         {
-            article = getArticle(listDir.at(i), lastRow, sheet.get());
+            dirtemp.setPath(RenameWidget::getDirectoryPath() + "/" + listDir.at(i));
+            QStringList tempstr = dirtemp.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
+            article = getArticle(tempstr.at(0), lastRow, sheet.get());
+
             if (!article.isEmpty())
             {
+
                 QString tempresult = RenameWidget::getResultPath() + "/" + "books" + "/" + article;
-                QString temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i) + "/" + listDir.at(i);
+                QString temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i) + "/" + tempstr .at(0);
                 dir.mkpath(tempresult);
                 dir.setPath(temppath);
                 foreach (QString f, dir.entryList(QDir::Files))
@@ -156,8 +161,8 @@ void Worker::doWork()
 
         QThread::msleep(100);
         emit workProgress("Архивация...");
-        this->doArchive(RenameWidget::getResultPath() + "/" + "books" + "/", RenameWidget::getResultPath() + "/" "books.zip");
-        this->doArchive(RenameWidget::getResultPath() + "/" + "image" + "/", RenameWidget::getResultPath() + "/" "image.zip");
+        this->doArchive(RenameWidget::getResultPath() + "/" + "books" + "/", RenameWidget::getResultPath() + "/" "books.zip", listDir.size());
+        this->doArchive(RenameWidget::getResultPath() + "/" + "image" + "/", RenameWidget::getResultPath() + "/" "image.zip", listDir.size());
 
         emit workProgress("Готово");
 
@@ -171,15 +176,17 @@ QString Worker::getArticle(QString isbn, int lastRow, QAxObject *sheet)
     std::unique_ptr<QAxObject>myCell;
     for (int i = 0; i<lastRow; i++)
     {
-        myCell.reset(sheet->querySubObject( "Cells(int,int)", i+1,1));
+        myCell.reset(sheet->querySubObject( "Cells(int,int)", i+1,2));
+        QString check = myCell->property("Value").toString();
         if (myCell->property("Value").toString() == isbn)
-            return sheet->querySubObject( "Cells(int,int)", i+1,2)->property("Value").toString();
+            return sheet->querySubObject( "Cells(int,int)", i+1,1)->property("Value").toString();
     }
     return "";
 }
 
-void Worker::doArchive(QString path, QString zippath)
+void Worker::doArchive(QString path, QString zippath, int size)
 {
+    int ind = 0;
     QZipWriter zip(zippath);
 
     zip.setCompressionPolicy(QZipWriter::AutoCompress);
@@ -187,11 +194,13 @@ void Worker::doArchive(QString path, QString zippath)
     QDirIterator it(path, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
+
         QString file_path = it.next();
         if (it.fileInfo().isDir())
         {
             zip.setCreationPermissions(QFile::permissions(file_path));
             zip.addDirectory(file_path.remove(path));
+            emit workProgress("Архивация:" + QString::number(++ind) + "/" + QString::number(size));
         }
         else if (it.fileInfo().isFile())
         {

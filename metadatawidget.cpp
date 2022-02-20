@@ -6,9 +6,6 @@ MetaDataWidget::MetaDataWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Me
     ui->setupUi(this);
     player = new QMediaPlayer(this);
 
-    setWindowTitle("Метаданные файла .mp3");
-    setWindowIcon(QIcon(":/icon.ico"));
-
     ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget->horizontalHeader()->setDefaultSectionSize(30);
     ui->tableWidget->verticalHeader()->setDefaultSectionSize(15);
