@@ -111,7 +111,7 @@ void Worker::doWork()
         QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
         QString article;
         QStringList mistakes;
-
+        dir.mkpath(RenameWidget::getResultPath() + "/" + "archives");
         for (int i = 0; i<listDir.size();i++)
         {
             dirtemp.setPath(RenameWidget::getDirectoryPath() + "/" + listDir.at(i));
@@ -136,7 +136,8 @@ void Worker::doWork()
                     QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
 
                 QThread::msleep(100);
-                doArchive(RenameWidget::getResultPath() + "/" + "books" + "/" + article + "/", RenameWidget::getResultPath() + "/" + "books" + "/" + article + "/" + article + ".zip", article);
+
+                doArchive(RenameWidget::getResultPath() + "/" + "books" + "/" + article + "/", RenameWidget::getResultPath() + "/" + "archives" + "/" + article + ".zip", article);
                 emit workProgress("Обработано каталогов: " + QString::number(i+1) + "/" + QString::number(listDir.size()));
             }
             else
@@ -161,7 +162,7 @@ void Worker::doWork()
         }
 
         QThread::msleep(100);
-        emit workProgress("Архивация...");
+        emit workProgress("Архивация изображений...");
         this->doArchive(RenameWidget::getResultPath() + "/" + "image" + "/", RenameWidget::getResultPath() + "/" "image.zip", article);
 
         emit workProgress("Готово");
