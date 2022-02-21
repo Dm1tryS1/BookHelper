@@ -18,10 +18,11 @@ RenameWidget::RenameWidget(QWidget *parent) :
     resultPath    = "C:/Users/dvm10/Desktop/";
     report        =  true;
 
-    worker.moveToThread(&thread);
-
-    connect(&thread, &QThread::started, &worker, &Worker::doWork);
+    connect(this, &RenameWidget::doWork, &worker, &Worker::doWork);
     connect(&worker, &Worker::workProgress, this, &RenameWidget::setText);
+
+    worker.moveToThread(&thread);
+    thread.start();
 }
 
 RenameWidget::~RenameWidget()
@@ -66,8 +67,7 @@ void RenameWidget::on_pb_Rename_clicked()
     if (!filePath.isEmpty() && !directoryPath.isEmpty() && !resultPath.isEmpty())
     {
         report = ui->cb_Report->isChecked();
-        thread.terminate();
-        thread.start();
+        emit doWork();
         ui->pb_Rename->setEnabled(false);
         ui->lineEdit_Directory->setText("");
         ui->lineEdit_File->setText("");
@@ -109,35 +109,31 @@ void Worker::doWork()
         QDir dirtemp;
         dir.setPath(RenameWidget::getDirectoryPath());
         QStringList listDir = dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
-        QString article;
         QStringList mistakes;
-        dir.mkpath(RenameWidget::getResultPath() + "/" + "archives");
+
         for (int i = 0; i<listDir.size();i++)
         {
             dirtemp.setPath(RenameWidget::getDirectoryPath() + "/" + listDir.at(i));
             QStringList tempstr = dirtemp.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot);
-            article = getArticle(tempstr.at(0), lastRow, sheet.get());
+            QString article = getArticle(tempstr.at(0), lastRow, sheet.get());
 
             if (!article.isEmpty())
             {
 
-                QString tempresult = RenameWidget::getResultPath() + "/" + "books" + "/" + article;
+                dir.mkpath(RenameWidget::getResultPath() + "/" + "archives" + "/" + article);
+
                 QString temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i) + "/" + tempstr .at(0);
-                dir.mkpath(tempresult);
-                dir.setPath(temppath);
-                foreach (QString f, dir.entryList(QDir::Files))
-                    QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
+                QString tempres  = RenameWidget::getResultPath() + "/" + "archives" + "/" + article;
 
-                tempresult = RenameWidget::getResultPath() + "/" + "image";
+                dir.mkpath(tempres);
+                doArchive(temppath + "/", tempres + "/" + article + ".zip");
+
                 temppath = RenameWidget::getDirectoryPath() + "/" + listDir.at(i);
-                dir.mkpath(tempresult);
+                dir.mkpath(tempres);
                 dir.setPath(temppath);
                 foreach (QString f, dir.entryList(QDir::Files))
-                    QFile::copy(temppath + "/" + f,  tempresult + "/" + f);
+                    QFile::copy(temppath + "/" + f,  tempres + "/" + f);
 
-                QThread::msleep(100);
-
-                doArchive(RenameWidget::getResultPath() + "/" + "books" + "/" + article + "/", RenameWidget::getResultPath() + "/" + "archives" + "/" + article + ".zip", article);
                 emit workProgress("Обработано каталогов: " + QString::number(i+1) + "/" + QString::number(listDir.size()));
             }
             else
@@ -161,10 +157,6 @@ void Worker::doWork()
             }
         }
 
-        QThread::msleep(100);
-        emit workProgress("Архивация изображений...");
-        this->doArchive(RenameWidget::getResultPath() + "/" + "image" + "/", RenameWidget::getResultPath() + "/" "image.zip", article);
-
         emit workProgress("Готово");
 
         workbook->dynamicCall("Save()");
@@ -185,7 +177,7 @@ QString Worker::getArticle(QString isbn, int lastRow, QAxObject *sheet)
     return "";
 }
 
-void Worker::doArchive(QString path, QString zippath, QString article)
+void Worker::doArchive(QString path, QString zippath)
 {
     QZipWriter zip(zippath);
 
@@ -194,24 +186,15 @@ void Worker::doArchive(QString path, QString zippath, QString article)
     QDirIterator it(path, QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
-
         QString file_path = it.next();
-        if (!(it.fileInfo().baseName()== article))
+        if (it.fileInfo().isFile())
         {
-            if (it.fileInfo().isDir())
-            {
-                zip.setCreationPermissions(QFile::permissions(file_path));
-                zip.addDirectory(file_path.remove(path));
-            }
-            else if (it.fileInfo().isFile())
-            {
-                QFile file(file_path);
-                if (!file.open(QIODevice::ReadOnly))
-                    continue;
-                zip.setCreationPermissions(QFile::permissions(file_path));
-                QByteArray ba = file.readAll();
-                zip.addFile(file_path.remove(path), ba);
-            }
+            QFile file(file_path);
+            if (!file.open(QIODevice::ReadOnly))
+                continue;
+            zip.setCreationPermissions(QFile::permissions(file_path));
+            QByteArray ba = file.readAll();
+            zip.addFile(file_path.remove(path), ba);
         }
     }
     zip.close();

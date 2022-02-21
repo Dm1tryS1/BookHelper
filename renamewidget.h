@@ -13,7 +13,7 @@ class Worker : public QObject
 {
     Q_OBJECT
     QString getArticle(QString isbn, int lastRow, QAxObject *sheet);
-    void doArchive(QString path, QString zippath, QString article);
+    void doArchive(QString path, QString zippath);
 
 public:
     Worker(QObject *_parent = 0):QObject(_parent){};
@@ -50,6 +50,7 @@ public:
 
 signals:
     void menuWindow();
+    void doWork();
 
 private slots:
     void on_pb_Close_clicked();
