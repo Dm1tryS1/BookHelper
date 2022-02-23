@@ -354,3 +354,10 @@ void MetaDataWidget::on_pb_Clear_clicked()
     ui->tableWidget->setRowCount(0);
 }
 
+void MetaDataWidget::closeEvent(QCloseEvent *event)
+{
+    event->ignore();
+    emit menuWindow();
+    event->accept();
+}
+

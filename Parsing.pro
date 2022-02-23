@@ -1,4 +1,4 @@
-QT     += core gui multimedia axcontainer gui-private
+QT += core gui multimedia axcontainer gui-private
 
 TARGET = BookHelp
 TEMPLATE = app

@@ -42,6 +42,7 @@ private slots:
     void on_pb_Clear_clicked();
     void on_pb_Close_clicked();
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
+    void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // METADATAWIDGET_H

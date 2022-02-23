@@ -21,7 +21,7 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::on_pb_MetaData_clicked()
-{
+{    
     this->close();
     metaData->show();
 }

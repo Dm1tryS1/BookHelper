@@ -12,27 +12,28 @@ class RenameWidget;
 class Worker : public QObject
 {
     Q_OBJECT
-    QString getArticle(QString isbn, int lastRow, QAxObject *sheet);
     void doArchive(QString path, QString zippath);
-
 public:
     Worker(QObject *_parent = 0):QObject(_parent){};
 
 signals:
     void workProgress(QString message);
+    void workEnd();
+    void workStart();
+
 
 public slots:
-    void doWork();
+    void doWork(int size, QString directoryPath, QString resultPath, bool report);
 };
 
 
 class RenameWidget : public QWidget
 {
     Q_OBJECT
-    static QString filePath;
-    static QString directoryPath;
-    static QString resultPath;
-    static bool    report;
+    QString filePath;
+    QString directoryPath;
+    QString resultPath;
+    bool    report;
 
     Ui::RenameWidget *ui;
     Worker worker;
@@ -40,17 +41,12 @@ class RenameWidget : public QWidget
     void setStatusButton();
 
 public:
-    explicit RenameWidget(QWidget *parent = nullptr);
+    RenameWidget(QWidget *parent = nullptr);
     ~RenameWidget();
-    static QString getFilePath() { return filePath; }
-    static QString getDirectoryPath() { return directoryPath; }
-    static QString getResultPath() { return resultPath; }
-    static bool    getReport() { return report; }
-
 
 signals:
     void menuWindow();
-    void doWork();
+    void doWork(int size, QString directoryPath, QString resultPath, bool report);
 
 private slots:
     void on_pb_Close_clicked();
@@ -59,6 +55,9 @@ private slots:
     void on_pb_Directory_clicked();
     void on_pb_Result_clicked();
     void setText(QString message);
+    void workEnd();
+    void workStart();
+    void closeEvent(QCloseEvent *event) override;
 
 };
 #endif // RENAMEWIDGET_H
