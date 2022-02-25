@@ -4,22 +4,22 @@ TARGET = BookHelp
 TEMPLATE = app
 
 SOURCES += \
-    main.cpp \
-    mainwindow.cpp \
-    metadatawidget.cpp \
-    renamewidget.cpp
+    sources/main.cpp \
+    sources/mainwindow.cpp \
+    sources/metadatawidget.cpp \
+    sources/renamewidget.cpp \
 
 HEADERS += \
-    mainwindow.h \
-    metadatawidget.h \
-    renamewidget.h \
+    headers/mainwindow.h \
+    headers/metadatawidget.h \
+    headers/renamewidget.h \
 
 FORMS += \
-    mainwindow.ui \
-    metadatawidget.ui \
-    renamewidget.ui
+    forms/mainwindow.ui \
+    forms/metadatawidget.ui \
+    forms/renamewidget.ui
 
 RESOURCES += \
-    img.qrc
+    rc/img.qrc
 
-RC_FILE = icon.rc
+RC_FILE = rc/icon.rc

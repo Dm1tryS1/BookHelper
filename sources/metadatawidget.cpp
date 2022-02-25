@@ -1,4 +1,4 @@
-#include "metadatawidget.h"
+#include "headers/metadatawidget.h"
 #include "ui_metadatawidget.h"
 
 MetaDataWidget::MetaDataWidget(QWidget *parent) : QWidget(parent), ui(new Ui::MetaDataWidget)

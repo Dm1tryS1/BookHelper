@@ -33,12 +33,14 @@ class RenameWidget : public QWidget
     QString filePath;
     QString directoryPath;
     QString resultPath;
-    bool    report;
+    bool    report = true;
+    QSettings *settings;
 
     Ui::RenameWidget *ui;
     Worker worker;
     QThread thread;
     void setStatusButton();
+    void changeDir(int ind, QString path);
 
 public:
     RenameWidget(QWidget *parent = nullptr);
@@ -46,7 +48,7 @@ public:
 
 signals:
     void menuWindow();
-    void doWork(int size, QString directoryPath, QString resultPath, bool report);
+    void doWork(const int &size, const QString &directoryPath, const QString &resultPath, const bool &report);
 
 private slots:
     void on_pb_Close_clicked();
