@@ -1,7 +1,6 @@
 #ifndef RENAMEWIDGET_H
 #define RENAMEWIDGET_H
 
-#include <QWidget>
 #include <QtWidgets>
 #include <QAxObject>
 
@@ -34,7 +33,6 @@ class RenameWidget : public QWidget
     QString directoryPath;
     QString resultPath;
     bool    report = true;
-    QSettings *settings;
 
     Ui::RenameWidget *ui;
     Worker worker;
@@ -45,6 +43,13 @@ class RenameWidget : public QWidget
 public:
     RenameWidget(QWidget *parent = nullptr);
     ~RenameWidget();
+    QString getFilePath()     {return filePath;}
+    QString getDirectoryPath(){return directoryPath;}
+    QString getResultPath()   {return resultPath;}
+
+    void setFilePath(QString _filePath)           {filePath = _filePath;}
+    void setDirectoryPath(QString _directoryPath) { directoryPath = _directoryPath;}
+    void setResultPath(QString _resultPath)       {resultPath = _resultPath;}
 
 signals:
     void menuWindow();
@@ -60,6 +65,5 @@ private slots:
     void workEnd();
     void workStart();
     void closeEvent(QCloseEvent *event) override;
-
 };
-#endif // RENAMEWIDGET_H
+#endif

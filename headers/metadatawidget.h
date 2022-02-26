@@ -1,7 +1,6 @@
 #ifndef METADATAWIDGET_H
 #define METADATAWIDGET_H
 
-#include <QWidget>
 #include <QtWidgets>
 #include <QMediaPlayer>
 #include <QAxObject>
@@ -13,7 +12,7 @@ class MetaDataWidget;
 class MetaDataWidget : public QWidget
 {
     Q_OBJECT
-    QString InputPath ="C:/Users/dvm10/Desktop/";
+    QString inputPath;
     QStringList listFile;
     QMediaPlayer *player;
     int ind;
@@ -32,6 +31,8 @@ class MetaDataWidget : public QWidget
 public:
     explicit MetaDataWidget(QWidget *parent = nullptr);
     ~MetaDataWidget();
+    void setInputPath(QString _inputPath){inputPath = _inputPath;}
+    QString getInputPath(){return inputPath;}
 
 signals:
     void menuWindow();
@@ -45,4 +46,4 @@ private slots:
     void closeEvent(QCloseEvent *event) override;
 };
 
-#endif // METADATAWIDGET_H
+#endif

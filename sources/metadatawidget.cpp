@@ -81,11 +81,11 @@ void MetaDataWidget::on_pb_Load_clicked()
     amount = 0;
     listFile.clear();
     ind = 0;
-    QString fileName = QFileDialog::getExistingDirectory(this, "Выбрать каталок", InputPath, QFileDialog::ShowDirsOnly);
-    if (!fileName.isEmpty())
+    inputPath = QFileDialog::getExistingDirectory(this, "Выбрать каталок", inputPath, QFileDialog::ShowDirsOnly);
+    if (!inputPath.isEmpty())
     {
             this->setEnabled(false);
-            makeList(fileName);
+            makeList(inputPath);
             player->setMedia(QUrl::fromLocalFile(listFile.at(0)));
     }
     else return;
@@ -265,7 +265,7 @@ bool MetaDataWidget::setColor(QAxObject *sheet, int lastRow)
 
 void MetaDataWidget::on_pb_Export_clicked()
 {
-        QString fileName = QFileDialog::getOpenFileName(this, "Выбрать файл для экспорта", InputPath, "(*.xlsx)");
+        QString fileName = QFileDialog::getOpenFileName(this, "Выбрать файл для экспорта", inputPath, "(*.xlsx)");
         if (!fileName.isEmpty())
         {
             this->setEnabled(false);

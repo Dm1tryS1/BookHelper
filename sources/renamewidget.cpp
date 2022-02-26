@@ -1,7 +1,6 @@
 #include "headers/renamewidget.h"
 #include "ui_renamewidget.h"
 #include <private/qzipwriter_p.h>
-#include <QMap>
 
 RenameWidget::RenameWidget(QWidget *parent) :QWidget(parent), ui(new Ui::RenameWidget)
 {
@@ -16,23 +15,6 @@ RenameWidget::RenameWidget(QWidget *parent) :QWidget(parent), ui(new Ui::RenameW
     connect(&worker, &Worker::workEnd, this, &RenameWidget::workEnd); 
 
     thread.start();
-
-    settings = new QSettings("./workdir/settings_demo.conf", QSettings::IniFormat);
-
-    if (!settings->value("path/dirPath").toString().isEmpty())
-        directoryPath = settings->value("path/dirPath").toString();
-    else
-        directoryPath = "C:/";
-
-    if (!settings->value("path/filePath").toString().isEmpty())
-        filePath = settings->value("path/filePath").toString();
-    else
-        filePath = "C:/";
-
-    if (!settings->value("path/resultPath").toString().isEmpty())
-        resultPath = settings->value("path/resultPath").toString();
-    else
-        resultPath = "C:/";
 }
 
 RenameWidget::~RenameWidget()
@@ -42,6 +24,7 @@ RenameWidget::~RenameWidget()
 
 void RenameWidget::on_pb_Close_clicked()
 {
+    emit menuWindow();
     this->close();
 }
 
@@ -234,8 +217,5 @@ void RenameWidget::closeEvent(QCloseEvent *event)
 {
     event->ignore();
     emit menuWindow();
-    settings->setValue("path/dirPath", directoryPath);
-    settings->setValue("path/filePath", filePath);
-    settings->setValue("path/resultPath", resultPath);
     event->accept();
 }

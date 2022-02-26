@@ -12,6 +12,10 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+    QSettings *settings;
+    Ui::MainWindow *ui;
+    MetaDataWidget *metaData;
+    RenameWidget *rename;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -21,10 +25,8 @@ private slots:
     void on_pb_MetaData_clicked();
     void on_pb_Rename_clicked();
 
-private:
-    Ui::MainWindow *ui;
-    MetaDataWidget *metaData;
-    RenameWidget *rename;
+    void showMenuFromMetaData();
+    void showMenuFromRename();
 };
 
-#endif // MAINWINDOW_H
+#endif
