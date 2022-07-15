@@ -35,21 +35,14 @@ MetaDataWidget::MetaDataWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Me
 
     ui->tableWidget->setColumnCount(listColumn.size());
     ui->tableWidget->setHorizontalHeaderLabels(listColumn);
+    ui->progressBar->setVisible(false);
 
     connect(player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(onMediaStatusChanged(QMediaPlayer::MediaStatus)));
-
-    ui->progressBar->setVisible(false);
 }
 
 MetaDataWidget::~MetaDataWidget()
 {
     delete ui;
-}
-
-void MetaDataWidget::on_pb_Close_clicked()
-{
-    this->close();
-    emit menuWindow();
 }
 
 void MetaDataWidget::makeList(QString path)
@@ -66,10 +59,7 @@ void MetaDataWidget::makeList(QString path)
     {
         QStringList files = dir.entryList(filters, QDir::Files);
         for (int i = 0; i<files.size();i++)
-        {
             listFile << path + "/" + files.at(i);
-            amount++;
-        }
     }
     else
     {
@@ -80,7 +70,6 @@ void MetaDataWidget::makeList(QString path)
 
 void MetaDataWidget::on_pb_Load_clicked()
 {
-    amount = 0;
     listFile.clear();
     ind = 0;
     inputPath = QFileDialog::getExistingDirectory(this, "Выбрать каталок", inputPath, QFileDialog::ShowDirsOnly);
@@ -88,7 +77,7 @@ void MetaDataWidget::on_pb_Load_clicked()
     {
             this->setEnabled(false);
             makeList(inputPath);
-            ui->progressBar->setRange(0,amount);
+            ui->progressBar->setRange(0,listFile.size());
             ui->progressBar->setValue(0);
             ui->progressBar->setVisible(true);
             player->setMedia(QUrl::fromLocalFile(listFile.at(0)));
@@ -98,12 +87,7 @@ void MetaDataWidget::on_pb_Load_clicked()
 
 QString MetaDataWidget::getDuration(QString duration)
 {
-    int seconds  = duration.toInt() / 1000;
-    int minutes  = seconds / 60;
-    seconds      = seconds % 60;
-    int hours    = minutes / 60;
-    minutes      = minutes % 60;
-    return QString::number(hours) + ":" + QString::number(minutes) + ":" + QString::number(seconds);
+    return QTime::fromMSecsSinceStartOfDay(duration.toInt()).toString("hh:mm:ss");
 }
 
 
@@ -114,7 +98,6 @@ void MetaDataWidget::newRow(QStringList list)
     {
         QTableWidgetItem* item = new QTableWidgetItem(list.at(i));
         ui->tableWidget->setItem(ui->tableWidget->rowCount()-1,i,item);
-
     }
 }
 
@@ -367,9 +350,6 @@ void MetaDataWidget::on_pb_Export_clicked()
         } else return;
 }
 
-
-
-
 void MetaDataWidget::on_pb_Clear_clicked()
 {
     ui->tableWidget->setRowCount(0);
@@ -381,4 +361,11 @@ void MetaDataWidget::closeEvent(QCloseEvent *event)
     emit menuWindow();
     event->accept();
 }
+
+void MetaDataWidget::on_pb_Close_clicked()
+{
+    this->close();
+    emit menuWindow();
+}
+
 

@@ -16,7 +16,6 @@ class MetaDataWidget : public QWidget
     QStringList listFile;
     QMediaPlayer *player;
     int ind;
-    int amount;
     Ui::MetaDataWidget *ui;
 
     void makeList(QString path);
