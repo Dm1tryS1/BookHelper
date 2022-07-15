@@ -37,6 +37,8 @@ MetaDataWidget::MetaDataWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Me
     ui->tableWidget->setHorizontalHeaderLabels(listColumn);
 
     connect(player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(onMediaStatusChanged(QMediaPlayer::MediaStatus)));
+
+    ui->progressBar->setVisible(false);
 }
 
 MetaDataWidget::~MetaDataWidget()
@@ -86,6 +88,9 @@ void MetaDataWidget::on_pb_Load_clicked()
     {
             this->setEnabled(false);
             makeList(inputPath);
+            ui->progressBar->setRange(0,amount);
+            ui->progressBar->setValue(0);
+            ui->progressBar->setVisible(true);
             player->setMedia(QUrl::fromLocalFile(listFile.at(0)));
     }
     else return;
@@ -113,20 +118,25 @@ void MetaDataWidget::newRow(QStringList list)
     }
 }
 
+QString getPath(QString path)
+{
+    return path.remove(path.lastIndexOf('/'), path.length()-path.lastIndexOf('/'));
+}
+
 void MetaDataWidget::getSumDuration()
 {
-    QString currBook = QString(ui->tableWidget->item(0,12)->text());
+    QString currBook = getPath(QString(ui->tableWidget->item(0,0)->text()));
     int index = 0;
     int sum = 0;
 
     for(int i=0; i<ui->tableWidget->rowCount();i++)
     {
-        if (currBook != ui->tableWidget->item(i,12)->text())
+        if (currBook != getPath(ui->tableWidget->item(i,0)->text()))
         {
             ui->tableWidget->item(index,11)->setText(getDuration(QString::number(sum)));
             sum = ui->tableWidget->item(i,10)->text().toInt();
             index = i;
-            currBook = ui->tableWidget->item(i,12)->text();
+            currBook = getPath(ui->tableWidget->item(i,0)->text());
             ui->tableWidget->item(index,10)->setText(getDuration(ui->tableWidget->item(i,10)->text()));
         }
         else
@@ -170,15 +180,14 @@ void MetaDataWidget::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         if (ind == listFile.size())
         {
             this->setEnabled(true);
-            ui->lableLoad->setText("Загрузка метаданных: " + QString::number(ind) + "/" + QString::number(amount));
-            ui->lableLoad->setText("");
+            ui->progressBar->setVisible(false);
             getSumDuration();
 
         }
         else
         {
             player->setMedia(QUrl::fromLocalFile(listFile.at(ind)));
-            ui->lableLoad->setText("Загрузка метаданных: " + QString::number(ind) + "/" + QString::number(amount));
+            ui->progressBar->setValue(ind);
         }
     }
 }
@@ -268,51 +277,54 @@ void MetaDataWidget::on_pb_Export_clicked()
         QString fileName = QFileDialog::getOpenFileName(this, "Выбрать файл для экспорта", inputPath, "(*.xlsx)");
         if (!fileName.isEmpty())
         {
+            ui->progressBar->setRange(0,ui->tableWidget->rowCount());
+            ui->progressBar->setValue(0);
+            ui->progressBar->setVisible(true);
+
             this->setEnabled(false);
 
             int lastRow = 0;
+            bool lastRowFound = false;
             QString currBook;
             bool flag;
 
-            std::unique_ptr<QAxObject>excel(new QAxObject( "Excel.Application", this));
+            QAxObject *excel = new QAxObject( "Excel.Application", this);
             excel->dynamicCall("SetVisible(bool)","false");
             excel-> setProperty ("DisplayAlerts", false);
-            std::unique_ptr<QAxObject> workbooks (excel->querySubObject( "Workbooks"));
-            std::unique_ptr<QAxObject> workbook  (workbooks->querySubObject( "Open(const QString&)", fileName));
-            std::unique_ptr<QAxObject> sheets    (workbook->querySubObject( "Worksheets" ));
-            std::unique_ptr<QAxObject> sheet     (sheets->querySubObject("Item( int )",1));
+            QAxObject *workbooks = excel->querySubObject( "Workbooks" );
+            QAxObject *workbook = workbooks->querySubObject( "Open(const QString&)", fileName);
+            QAxObject *sheets = workbook->querySubObject( "Worksheets" );
+            QAxObject *sheet = sheets->querySubObject("Item( int )",1);
 
+            while(!lastRowFound)
             {
-                std::unique_ptr<QAxObject> cell;
-                while(true)
-                {
-                    lastRow++;
-                    cell.reset(sheet->querySubObject( "Cells(int,int)", lastRow,1));
-                    if (cell->property("Value").toString() == "")
-                        break;
-                }
+                lastRow++;
+                QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow,1);
+                if (cell->property("Value").toString() == "")
+                    lastRowFound = true;
+                delete cell;
             }
 
             if (lastRow == 1)
             {
-                    setHeader(sheet.get());
+                    setHeader(sheet);
                     lastRow++;
             }
 
-            std::unique_ptr<QAxObject> cell(sheet->querySubObject( "Cells(int,int)", lastRow-1,1));
+            QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow-1,1);
             currBook = cell->property("Value()").toString();
-            flag = setColor(sheet.get(), lastRow);
-            std::unique_ptr<QAxObject> interior;
+            flag = setColor(sheet, lastRow);
+            delete cell;
 
             for (int i=0;i<ui->tableWidget->rowCount();i++)
             {
-
+                ui->progressBar->setValue(i);
                 for (int j=0;j<ui->tableWidget->columnCount();j++)
                 {
-                    cell.reset(sheet->querySubObject( "Cells(int,int)", lastRow+i,j+1));
-                    interior.reset(cell->querySubObject("Interior"));
+                    QAxObject *cell = sheet->querySubObject( "Cells(int,int)", lastRow+i,j+1);
+                    QAxObject *interior = cell->querySubObject("Interior");
 
-                    if (currBook == ui->tableWidget->item(i,12)->text())
+                    if (currBook == getPath(ui->tableWidget->item(i,0)->text()))
                     {
                         if (flag)
                             interior->setProperty("Color",QColor("lightgray"));
@@ -323,7 +335,7 @@ void MetaDataWidget::on_pb_Export_clicked()
                     else
 
                     {
-                        currBook = ui->tableWidget->item(i,12)->text();
+                        currBook = getPath(ui->tableWidget->item(i,0)->text());
                         flag = !flag;
 
                         if (flag)
@@ -333,21 +345,30 @@ void MetaDataWidget::on_pb_Export_clicked()
                     }
 
                     cell->dynamicCall( "SetValue(const QVariant&)", QVariant((ui->tableWidget->item(i,j)->text())));
+                    delete interior;
+                    delete cell;
                 }
 
-                ui->lableLoad->setText("Экспорт: " + QString::number(i+1) + "/" + QString::number(amount));
             }
-            ui->lableLoad->setText("");
             workbook->dynamicCall("Save()");
             workbooks->dynamicCall("Close()");
             excel->dynamicCall("Quit()");
+
+            ui->progressBar->setVisible(false);
+
+            delete excel;
+
             this->setEnabled(true);
             QMessageBox msgBox;
+            msgBox.setWindowFlags(Qt::WindowStaysOnTopHint);
             msgBox.setText("Выгрузка прошла успешно!");
             msgBox.exec();
 
         } else return;
 }
+
+
+
 
 void MetaDataWidget::on_pb_Clear_clicked()
 {

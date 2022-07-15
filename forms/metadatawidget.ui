@@ -57,16 +57,32 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="lableLoad">
+        <widget class="QPushButton" name="pb_Close">
          <property name="text">
-          <string/>
+          <string>Меню</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pb_Close">
-         <property name="text">
-          <string>Меню</string>
+        <widget class="QProgressBar" name="progressBar">
+         <property name="styleSheet">
+          <string notr="true">QProgressBar {
+	background-color: rgb(200, 200, 200);
+	border-radius: 8px;
+	color: rgb(170, 85, 127);
+	text-align: center;
+	border-style: solid;
+}
+
+QProgressBar::chunk{
+	border-radius: 10px;
+	
+	background-color: qlineargradient(spread:repeat, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(74, 201, 85, 255), stop:1 rgba(255, 255, 255, 255));
+
+}</string>
+         </property>
+         <property name="value">
+          <number>24</number>
          </property>
         </widget>
        </item>
